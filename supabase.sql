@@ -3,8 +3,6 @@
 -- Visitors never touch the tables directly; they go through the functions below,
 -- which check the secret edit tokens. Tokens are never readable from the browser.
 
-create extension if not exists pgcrypto;
-
 create table if not exists public.polls (
   id          text primary key,
   title       text not null check (char_length(title) between 1 and 120),
@@ -49,8 +47,7 @@ returns text language plpgsql security definer set search_path = public as $$
 declare new_id text;
 begin
   loop
-    new_id := lower(substr(replace(encode(gen_random_bytes(9), 'base64'), '/', ''), 1, 8));
-    new_id := regexp_replace(new_id, '[^a-z0-9]', 'x', 'g');
+    new_id := substr(replace(gen_random_uuid()::text, '-', ''), 1, 8);
     exit when not exists (select 1 from polls where id = new_id);
   end loop;
   insert into polls (id, title, dates, start_hour, end_hour, tz, owner_token)
