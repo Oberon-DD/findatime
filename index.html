@@ -3,8 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Find a Time</title>
-<meta name="description" content="Group availability polls with a real Save button. No login.">
+<title>Find a Time · free group scheduling poll, no login</title>
+<meta name="description" content="Pick some days, send one link, see when everyone is free. A free when2meet-style availability poll with a real Save button. No accounts, no app.">
+<link rel="canonical" href="https://oberon-dd.github.io/findatime/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Find a Time">
+<meta property="og:title" content="Find a Time · when are we all free?">
+<meta property="og:description" content="Mark when you're free and press Save. No account needed.">
+<meta property="og:url" content="https://oberon-dd.github.io/findatime/">
+<meta property="og:image" content="https://oberon-dd.github.io/findatime/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#2453E6">
+<script>
+/* Poll pages hold people's names and availability: keep them out of search engines.
+   Only the homepage (no ?p=) should be indexed. */
+if (/[?&]p=/.test(location.search)) {
+  var m = document.createElement("meta"); m.name = "robots"; m.content = "noindex, nofollow";
+  document.head.appendChild(m);
+}
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232453E6'/%3E%3Crect x='7' y='8' width='8' height='7' rx='1.5' fill='white'/%3E%3Crect x='17' y='8' width='8' height='7' rx='1.5' fill='white' opacity='.45'/%3E%3Crect x='7' y='17' width='8' height='7' rx='1.5' fill='white' opacity='.45'/%3E%3Crect x='17' y='17' width='8' height='7' rx='1.5' fill='white'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,7 +32,11 @@
 /* ===== CONFIG: paste your Supabase project URL and publishable (anon) key here ===== */
 window.FAT_CONFIG = {
   SUPABASE_URL: "https://jqzzwzvkvvehixxkcrpo.supabase.co",
-  SUPABASE_KEY: "sb_publishable__c2QkaNPigo-8_RIgKfGmw_7tLtYzKr"
+  SUPABASE_KEY: "sb_publishable__c2QkaNPigo-8_RIgKfGmw_7tLtYzKr",
+  /* Support slot in the footer. Leave SUPPORT_URL empty to hide it.
+     e.g. "https://buymeacoffee.com/yourname" or a sponsor's site. */
+  SUPPORT_URL: "",
+  SUPPORT_LABEL: "Buy me a coffee"
 };
 </script>
 <style>
@@ -146,7 +169,33 @@ h1{font:800 clamp(28px,4.4vw,46px)/1.02 var(--f-display);letter-spacing:-.02em;m
 .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:30;max-width:calc(100% - 32px)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-footer{color:var(--muted);font-size:12px;text-align:center}
+/* homepage hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:center;padding-block:8px 4px}
+.hero h1{font-size:clamp(34px,5.6vw,60px);margin:0 0 14px}
+.hero h1 em{font-style:normal;color:var(--mine)}
+.hero .pitch{font-size:17px;color:var(--muted);max-width:52ch;margin:0 0 18px}
+.points{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.points li{display:flex;gap:10px;align-items:flex-start;font-size:15px}
+.points li::before{content:"";flex:none;width:14px;height:14px;margin-top:4px;border-radius:3px;background:var(--mine)}
+.points li:nth-child(2)::before{background:var(--heat3)}
+.points li:nth-child(3)::before{background:var(--warn)}
+.demo{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.demo .dg{display:grid;grid-template-columns:auto repeat(5,1fr);gap:3px;font:11px var(--f-mono);color:var(--muted)}
+.demo .dg span{text-align:center}
+.demo .dg i{height:16px;border-radius:3px;background:var(--heat0)}
+.demo .bar{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;color:var(--muted)}
+.demo .bar .pill{font-size:12px;padding:4px 10px}
+.compare{font-size:13px;color:var(--muted);margin-top:16px}
+
+/* make-your-own CTA */
+.cta{display:flex;flex-direction:column;gap:10px;background:var(--mine-soft);border-color:transparent}
+.cta p{margin:0;font-size:14px}
+
+footer{color:var(--muted);font-size:12px;display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;align-items:center}
+footer a{color:var(--muted)}
+.support{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:4px 12px;color:var(--ink);text-decoration:none;background:var(--surface)}
+.support:hover{border-color:var(--muted)}
+@media (max-width:760px){.hero{grid-template-columns:1fr}}
 
 @media (max-width:1000px){.panes{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.side{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}}
 @media (max-width:760px){
@@ -168,6 +217,24 @@ footer{color:var(--muted);font-size:12px;text-align:center}
     This page isn't connected to a database yet. Paste your Supabase URL and key into <code>FAT_CONFIG</code> at the top of <code>index.html</code>.
   </div>
   <div class="notice warn" id="errNotice" hidden></div>
+
+  <!-- ===== HOMEPAGE PITCH ===== -->
+  <section class="hero" id="hero" hidden>
+    <div>
+      <h1>Find a time that works for <em>everyone</em>.</h1>
+      <p class="pitch">Pick some days and send one link. People mark when they're free and press Save, and you see the best time at a glance. No accounts, no app, free.</p>
+      <ul class="points">
+        <li>A real Save button, so everyone knows their answers went through.</li>
+        <li>See who has answered and which times work for most people.</li>
+        <li>Change your answers later, even from your phone.</li>
+      </ul>
+      <p class="compare">Like when2meet, but you can tell whether your times were saved.</p>
+    </div>
+    <div class="demo" aria-hidden="true">
+      <div class="dg" id="demoGrid"></div>
+      <div class="bar"><span class="pill saved">Saved</span><span>4 of 5 people can make Wed 10:00–11:30</span></div>
+    </div>
+  </section>
 
   <!-- ===== CREATE / EDIT VIEW ===== -->
   <section class="setup" id="setup" hidden>
@@ -217,6 +284,10 @@ footer{color:var(--muted);font-size:12px;text-align:center}
       <button type="button" class="linkish" id="myLink">Copy my edit link</button>
       <span>(use it to change your answers from another device)</span>
       <button type="button" class="linkish" id="notMe">Not you?</button>
+      <button type="button" class="linkish" id="removeMe" hidden>Remove my answers</button>
+      <span id="removeConfirm" hidden>Remove your answers from this poll for everyone?
+        <button type="button" class="btn" id="removeYes">Yes, remove</button>
+        <button type="button" class="btn" id="removeNo">Keep them</button></span>
     </div>
 
     <div class="tabs" role="tablist">
@@ -248,11 +319,21 @@ footer{color:var(--muted);font-size:12px;text-align:center}
           <div class="sub">Longest blocks with the most people.</div>
           <ul class="best" id="best"></ul>
         </section>
+        <section class="pane cta">
+          <h2>Planning something else?</h2>
+          <p>Make your own poll in 30 seconds. Free, no account.</p>
+          <a class="btn primary" href="./" style="text-align:center;text-decoration:none">Make a poll</a>
+        </section>
       </aside>
     </div>
   </div>
 
-  <footer>Find a Time · answers are visible to anyone with the link</footer>
+  <footer>
+    <span>Find a Time · free, no login</span>
+    <span>Answers are visible to anyone with the poll link</span>
+    <a href="privacy.html">Privacy</a>
+    <a class="support" id="support" href="#" target="_blank" rel="noopener" hidden>☕ <span id="supportLabel"></span></a>
+  </footer>
 </div>
 
 <div class="savebar" id="savebar" hidden>
@@ -327,7 +408,7 @@ function hourOpts(sel){let s="";for(let i=0;i<=24;i++)s+='<option value="'+i+'"'
 function openSetup(edit){
   editing=!!edit;
   $("setup").hidden=false;
-  $("setupTitle").textContent=edit?"Edit poll":"New poll";
+  $("setupTitle").textContent=edit?"Edit poll":"Start a poll";
   $("setupLede").textContent=edit?"Changes show up for everyone. Answers on removed days or hours are kept but hidden.":"Pick the days and hours people can choose from. You'll get a link to send around. Nobody needs an account.";
   $("cfgSave").textContent=edit?"Save changes":"Create poll";
   $("cfgCancel").hidden=!edit;
@@ -346,9 +427,13 @@ function renderCal(){
   for(let i=0;i<42;i++){
     const d=new Date(start);d.setDate(start.getDate()+i);
     if(i%7===0){
-      let label=i===0?d:null;
-      for(let j=0;j<7&&!label;j++){const x=new Date(d);x.setDate(d.getDate()+j);if(x.getDate()===1)label=x}
-      if(label){const mo=document.createElement("div");mo.className="mo";mo.textContent=MO[label.getMonth()]+" "+label.getFullYear();cal.appendChild(mo)}
+      const last=new Date(d);last.setDate(d.getDate()+6);
+      const turns=last.getMonth()!==d.getMonth()||d.getDate()===1;
+      if(i===0||turns){
+        const mo=document.createElement("div");mo.className="mo";
+        mo.textContent=last.getMonth()!==d.getMonth()?MO[d.getMonth()]+" / "+MO[last.getMonth()]+" "+last.getFullYear():MO[d.getMonth()]+" "+d.getFullYear();
+        cal.appendChild(mo);
+      }
     }
     const b=document.createElement("button");b.type="button";const s=iso(d);
     b.textContent=d.getDate();b.className=(draft.has(s)?"on":"")+(d<today?" past":"");b.title=dayLabel(s);b.setAttribute("aria-pressed",draft.has(s));
@@ -465,6 +550,7 @@ function updateSaveBar(){
   const dirty=!sameSet(mine,saved),bar=$("savebar"),pill=$("pill"),msg=$("saveMsg"),btn=$("saveBtn");
   bar.classList.toggle("isdirty",dirty);
   $("revertBtn").hidden=!dirty||!mySavedAt;
+  $("removeMe").hidden=!me||!mySavedAt||!$("removeConfirm").hidden;
   $("clearBtn").disabled=!mine.size||!me;
   btn.textContent=saving?"Saving…":"Save";
   if(!me){pill.className="pill idle";pill.textContent="Who are you?";msg.textContent="Type your name above, then mark your times.";btn.disabled=true;return}
@@ -542,9 +628,34 @@ async function loadPoll(rebuild){
   return true;
 }
 
+/* homepage demo heatmap (illustration only) */
+function renderDemo(){
+  const g=$("demoGrid");g.innerHTML="";
+  const days=["Mon","Tue","Wed","Thu","Fri"],hrs=["09:00","09:30","10:00","10:30","11:00","11:30","12:00"];
+  const lv=[[1,2,0,1,0],[2,2,1,2,0],[2,3,4,2,1],[1,3,4,2,1],[0,2,4,1,2],[0,1,3,1,2],[0,0,1,0,1]];
+  g.appendChild(document.createElement("span"));days.forEach(d=>{const s=document.createElement("span");s.textContent=d;g.appendChild(s)});
+  hrs.forEach((h,r)=>{const s=document.createElement("span");s.textContent=h;s.style.textAlign="right";s.style.paddingRight="6px";g.appendChild(s);
+    lv[r].forEach(v=>{const i=document.createElement("i");i.style.background="var(--heat"+v+")";g.appendChild(i)})});
+}
+
+/* support slot */
+(function(){if(!CFG.SUPPORT_URL)return;const a=$("support");a.href=CFG.SUPPORT_URL;$("supportLabel").textContent=CFG.SUPPORT_LABEL||"Support";a.hidden=false})();
+
+/* remove my answers */
+$("removeMe").onclick=()=>{$("removeConfirm").hidden=false;$("removeMe").hidden=true};
+$("removeNo").onclick=()=>{$("removeConfirm").hidden=true;$("removeMe").hidden=false};
+$("removeYes").onclick=async()=>{
+  try{
+    await rpc("delete_response",{p_poll:poll.id,p_name:me.name,p_token:me.token});
+    store.del("me:"+poll.id);me=null;mine=new Set();saved=new Set();mySavedAt=null;
+    $("removeConfirm").hidden=true;$("nameInput").value="";showNameGate();
+    toast("Your answers are removed from this poll.");await refresh();
+  }catch(e){toast("Couldn't remove your answers. Try again.")}
+};
+
 async function boot(){
   if(!CFG.SUPABASE_URL||!CFG.SUPABASE_KEY){$("cfgNotice").hidden=false;return}
-  if(!pollId){openSetup(false);return}
+  if(!pollId){$("hero").hidden=false;renderDemo();openSetup(false);$("cfgTitle").blur();return}
   $("pollView").hidden=false;$("savebar").hidden=false;
   try{if(!await loadPoll(true)){$("savebar").hidden=true;return}}
   catch(e){showErr("Couldn't reach the server. Check your connection and reload.");return}

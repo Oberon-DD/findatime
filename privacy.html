@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Privacy · Find a Time</title>
+<meta name="description" content="What Find a Time stores, where, and how to remove it.">
+<link rel="canonical" href="https://oberon-dd.github.io/findatime/privacy.html">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<style>
+:root{--bg:#F3F5F8;--surface:#FFFFFF;--ink:#141A24;--muted:#5D6778;--line:#DCE1EA;--mine:#2453E6;
+  --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;--f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:light}
+@media (prefers-color-scheme: dark){:root{--bg:#0F131A;--surface:#171C25;--ink:#E8ECF3;--muted:#98A2B4;--line:#2A3240;--mine:#6E8DFF;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
+main{max-width:68ch;margin:0 auto}
+a{color:var(--mine)}
+.brand{font:700 15px var(--f-display);color:var(--ink);text-decoration:none}
+h1{font:800 clamp(30px,5vw,44px)/1.05 var(--f-display);margin:24px 0 8px;text-wrap:balance}
+h2{font:700 20px/1.25 var(--f-display);margin:32px 0 6px}
+.muted{color:var(--muted)}
+ul{padding-left:20px}
+</style>
+</head>
+<body>
+<main>
+  <a class="brand" href="./">← Find a Time</a>
+  <h1>Privacy</h1>
+  <p class="muted">Last updated 30 October 2026</p>
+
+  <p>Find a Time is a small, free tool for picking a meeting time. It stores only what it needs for that, and nothing about you that you didn't type in yourself.</p>
+
+  <h2>What we store</h2>
+  <ul>
+    <li><b>Polls:</b> the poll name, the days and hours you picked, the time zone, and when it was created.</li>
+    <li><b>Answers:</b> the name you type in, the time slots you mark, and when you last saved.</li>
+    <li><b>Edit keys:</b> a random code linked to each poll and each answer, so only the person who made them can change them. These are never shown to other visitors.</li>
+  </ul>
+  <p>We don't ask for email addresses or accounts. There are no ad trackers, no analytics and no cookies.</p>
+
+  <h2>Who can see it</h2>
+  <p>Anyone with a poll's link can see the poll and everyone's names and marked times. Poll pages are kept out of search engines, but treat the link like you would a group chat: share it with the people you're planning with.</p>
+
+  <h2>Your browser</h2>
+  <p>Your browser remembers which name you used on a poll (and, if you made the poll, its edit key) in local storage, so you don't have to type it again. It never leaves your device. Clearing your browser's site data removes it.</p>
+
+  <h2>Where it's stored</h2>
+  <p>Polls and answers are stored in a database run by <a href="https://supabase.com/privacy" rel="noopener">Supabase</a> in London (UK). The website itself is served by <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" rel="noopener">GitHub Pages</a>, which, like any web host, sees the IP addresses of visitors. Fonts load from Google Fonts.</p>
+
+  <h2>Removing your answers</h2>
+  <p>On a poll you answered, press <b>Remove my answers</b> next to your name. That deletes them straight away. If you no longer have access from the same browser, or you want a whole poll removed, open an issue at <a href="https://github.com/Oberon-DD/findatime/issues" rel="noopener">github.com/Oberon-DD/findatime</a> with the poll link and we'll delete it.</p>
+</main>
+</body>
+</html>
