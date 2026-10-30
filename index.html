@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Find a Time</title>
+<meta name="description" content="Group availability polls with a real Save button. No login.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232453E6'/%3E%3Crect x='7' y='8' width='8' height='7' rx='1.5' fill='white'/%3E%3Crect x='17' y='8' width='8' height='7' rx='1.5' fill='white' opacity='.45'/%3E%3Crect x='7' y='17' width='8' height='7' rx='1.5' fill='white' opacity='.45'/%3E%3Crect x='17' y='17' width='8' height='7' rx='1.5' fill='white'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script>
+/* ===== CONFIG: paste your Supabase project URL and publishable (anon) key here ===== */
+window.FAT_CONFIG = {
+  SUPABASE_URL: "",
+  SUPABASE_KEY: ""
+};
+</script>
+<style>
+/* Layout: header + two paint grids side by side (yours / everyone's) + side rail; save bar pinned to bottom */
+:root{
+  --bg:#F3F5F8; --surface:#FFFFFF; --ink:#141A24; --muted:#5D6778; --line:#DCE1EA; --cell:#E9EDF3;
+  --mine:#2453E6; --mine-soft:#D9E2FF;
+  --heat0:#E9EDF3; --heat1:#C9EBDD; --heat2:#8FD6B8; --heat3:#43B98B; --heat4:#12875C;
+  --warn:#D9480F; --warn-soft:#FFE8DC; --ok:#12875C; --ok-soft:#DDF4EA;
+  --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0F131A; --surface:#171C25; --ink:#E8ECF3; --muted:#98A2B4; --line:#2A3240; --cell:#222937;
+  --mine:#6E8DFF; --mine-soft:#24305A;
+  --heat0:#222937; --heat1:#163E31; --heat2:#1D6249; --heat3:#2A9A6E; --heat4:#4FD39E;
+  --warn:#FF8A50; --warn-soft:#3A2418; --ok:#4FD39E; --ok-soft:#14322A; color-scheme:dark}}
+
+*{box-sizing:border-box}
+html{padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:28px 130px}
+[hidden]{display:none!important}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid var(--mine);outline-offset:2px}
+a{color:var(--mine)}
+
+.brand{display:flex;align-items:center;gap:8px;font:700 15px var(--f-display);color:var(--ink);text-decoration:none;width:fit-content}
+.brand i{width:20px;height:20px;border-radius:5px;background:var(--mine);display:inline-block;position:relative}
+.brand i::after{content:"";position:absolute;inset:5px;border-radius:2px;background:linear-gradient(90deg,#fff 45%,transparent 45% 55%,rgba(255,255,255,.45) 55%)}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px}
+.eyebrow{font:500 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font:800 clamp(28px,4.4vw,46px)/1.02 var(--f-display);letter-spacing:-.02em;margin:8px 0 0;text-wrap:balance}
+.meta{color:var(--muted);font-size:14px;margin-top:8px}
+.hacts{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:8px;font-weight:500}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--mine);color:#fff;border-color:var(--mine)}
+.btn.big{padding:12px 22px;font:700 16px var(--f-display)}
+.btn:disabled{opacity:.45;cursor:default}
+
+.notice{padding:14px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:14px}
+.notice.warn{background:var(--warn-soft);border-color:transparent}
+.notice code{font:13px var(--f-mono)}
+
+/* name gate */
+.namebar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--mine-soft);border-radius:12px;padding:12px 14px}
+.namebar label{font-weight:600}
+.namebar input{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);min-width:0;flex:1;max-width:260px}
+.namebar .hint{color:var(--muted);font-size:13px;flex-basis:100%}
+.me{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.me b{color:var(--ink)}
+.linkish{background:none;border:0;padding:0;color:var(--mine);text-decoration:underline;font-size:14px}
+
+.tabs{display:none;gap:6px;background:var(--cell);padding:4px;border-radius:10px;width:fit-content}
+.tabs button{border:0;background:transparent;padding:7px 14px;border-radius:7px;color:var(--muted);font-weight:500}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)}
+
+.panes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 260px;gap:18px;align-items:start}
+.pane{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.pane h2{font:700 19px/1.2 var(--f-display);margin:0}
+.pane .sub{color:var(--muted);font-size:13px;margin:4px 0 12px}
+.legend{display:flex;align-items:center;gap:6px;font:12px var(--f-mono);color:var(--muted);margin-bottom:12px;flex-wrap:wrap}
+.legend i{width:16px;height:12px;border-radius:3px;display:inline-block}
+
+.scroller{overflow-x:auto;padding-bottom:4px}
+.grid{display:grid;user-select:none;-webkit-user-select:none;touch-action:none;width:max-content;min-width:100%}
+.grid .dh{font:600 12px/1.2 var(--f-body);text-align:center;padding:0 2px 8px}
+.grid .dh span{display:block;font:400 11px var(--f-mono);color:var(--muted)}
+.grid .tl{font:400 11px/1 var(--f-mono);color:var(--muted);text-align:right;padding-right:8px;transform:translateY(-6px);font-variant-numeric:tabular-nums;white-space:nowrap}
+.c{height:18px;min-width:44px;background:var(--cell);border-right:2px solid var(--surface);border-bottom:1px solid var(--surface)}
+.c.hr{border-top:1px solid var(--line)}
+.mine .c{cursor:crosshair}
+.mine .c.on{background:var(--mine)}
+.mine .c.unsaved{box-shadow:inset 0 0 0 2px var(--warn)}
+.mine.locked{opacity:.5}
+.mine.locked .c{cursor:not-allowed}
+.group .c{cursor:pointer}
+.group .c.sel{outline:2px solid var(--ink);outline-offset:-2px}
+
+.side{display:flex;flex-direction:column;gap:18px;min-width:0}
+.who{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.who li{display:flex;align-items:center;gap:9px;font-size:14px}
+.who .av{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;font:600 11px var(--f-body);color:#fff}
+.who .t{margin-left:auto;font:11px var(--f-mono);color:var(--muted);white-space:nowrap}
+.who li.no{color:var(--muted)}
+.who li.no .nm{text-decoration:line-through;text-decoration-color:var(--line)}
+.best{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.best li{display:flex;justify-content:space-between;gap:8px;padding:9px 10px;border-radius:8px;background:var(--ok-soft);font-size:14px;cursor:pointer}
+.best b{font:500 13px var(--f-mono);font-variant-numeric:tabular-nums}
+.best .n{font:600 13px var(--f-mono);color:var(--ok);white-space:nowrap}
+.empty{color:var(--muted);font-size:13px}
+
+/* create / edit */
+.setup{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:26px}
+.setup h2{font:700 22px/1.2 var(--f-display);margin:0 0 4px}
+.setup .lede{color:var(--muted);font-size:14px;margin:0}
+.field{display:flex;flex-direction:column;gap:5px;margin-top:14px}
+.field label,.flabel{font:500 12px var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.field input,.field select{font:inherit;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row .field{flex:1;min-width:110px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.cal .wd{font:500 11px var(--f-mono);color:var(--muted);text-align:center}
+.cal button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:7px;padding:7px 0;font:500 13px var(--f-mono);font-variant-numeric:tabular-nums}
+.cal button.on{background:var(--mine);border-color:var(--mine);color:#fff}
+.cal button.past{opacity:.35}
+.cal .mo{grid-column:1/-1;font:600 12px var(--f-body);margin-top:6px}
+.calnav{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+
+/* save bar */
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.savebar .in{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;padding:6px 12px;border-radius:999px}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.pill.saved{background:var(--ok-soft);color:var(--ok)}
+.pill.dirty{background:var(--warn-soft);color:var(--warn)}
+.pill.idle{background:var(--cell);color:var(--muted)}
+.savebar .msg{color:var(--muted);font-size:14px;flex:1;min-width:180px}
+.savebar .acts{display:flex;gap:8px;margin-left:auto}
+.savebtn{background:var(--mine);color:#fff;border:0;padding:11px 26px;border-radius:9px;font:700 16px var(--f-display)}
+.savebar.isdirty .savebtn{background:var(--warn)}
+.savebtn:disabled{background:var(--cell);color:var(--muted);cursor:default}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:30;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+footer{color:var(--muted);font-size:12px;text-align:center}
+
+@media (max-width:1000px){.panes{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.side{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}}
+@media (max-width:760px){
+  .tabs{display:flex}
+  .panes{grid-template-columns:minmax(0,1fr)}
+  .panes[data-tab="mine"] .pane.group,.panes[data-tab="group"] .pane.mine-pane{display:none}
+  .side{grid-template-columns:1fr}
+  .setup{grid-template-columns:1fr}
+  .savebtn{padding:11px 20px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="brand" href="./"><i></i>Find a Time</a>
+
+  <div class="notice warn" id="cfgNotice" hidden>
+    This page isn't connected to a database yet. Paste your Supabase URL and key into <code>FAT_CONFIG</code> at the top of <code>index.html</code>.
+  </div>
+  <div class="notice warn" id="errNotice" hidden></div>
+
+  <!-- ===== CREATE / EDIT VIEW ===== -->
+  <section class="setup" id="setup" hidden>
+    <div>
+      <h2 id="setupTitle">New poll</h2>
+      <p class="lede" id="setupLede">Pick the days and hours people can choose from. You'll get a link to send around. Nobody needs an account.</p>
+      <div class="field"><label for="cfgTitle">What's it for</label><input id="cfgTitle" maxlength="120" placeholder="Project kickoff"></div>
+      <div class="row">
+        <div class="field"><label for="cfgStart">Earliest</label><select id="cfgStart"></select></div>
+        <div class="field"><label for="cfgEnd">Latest</label><select id="cfgEnd"></select></div>
+      </div>
+      <div class="field"><span class="flabel">Time zone</span><div id="cfgTz" style="font:14px var(--f-mono)"></div></div>
+      <div class="row" style="margin-top:20px">
+        <button class="btn primary big" id="cfgSave">Create poll</button>
+        <button class="btn" id="cfgCancel" hidden>Cancel</button>
+      </div>
+    </div>
+    <div>
+      <span class="flabel">Days <span id="dayCount"></span></span>
+      <div class="calnav"><button class="btn" id="calPrev" aria-label="Earlier weeks">←</button><span id="calRange" class="empty"></span><button class="btn" id="calNext" aria-label="Later weeks">→</button></div>
+      <div class="cal" id="cal"></div>
+    </div>
+  </section>
+
+  <!-- ===== POLL VIEW ===== -->
+  <div id="pollView" hidden style="display:flex;flex-direction:column;gap:22px">
+    <header class="top">
+      <div>
+        <div class="eyebrow">Availability poll</div>
+        <h1 id="title">Loading…</h1>
+        <div class="meta" id="meta"></div>
+      </div>
+      <div class="hacts">
+        <button class="btn primary" id="copyLink">Copy link to share</button>
+        <button class="btn" id="editBtn" hidden>Edit days &amp; hours</button>
+      </div>
+    </header>
+
+    <form class="namebar" id="nameForm" hidden>
+      <label for="nameInput">Your name</label>
+      <input id="nameInput" maxlength="40" autocomplete="given-name" placeholder="e.g. Oberon" required>
+      <button class="btn primary" type="submit">Start marking</button>
+      <span class="hint">So others know whose times these are. No account needed.</span>
+    </form>
+    <div class="me" id="meBar" hidden>
+      <span>Answering as <b id="meName"></b></span>
+      <button type="button" class="linkish" id="myLink">Copy my edit link</button>
+      <span>(use it to change your answers from another device)</span>
+      <button type="button" class="linkish" id="notMe">Not you?</button>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tabMine" aria-selected="true">Your times</button>
+      <button role="tab" id="tabGroup" aria-selected="false">Everyone</button>
+    </div>
+
+    <div class="panes" id="panes" data-tab="mine">
+      <section class="pane mine-pane">
+        <h2>Your times</h2>
+        <div class="sub">Click and drag to mark when you can make it. Drag over marked slots to unmark.</div>
+        <div class="legend"><i style="background:var(--cell)"></i>busy <i style="background:var(--mine)"></i>free <i style="background:var(--cell);box-shadow:inset 0 0 0 2px var(--warn)"></i>not saved yet</div>
+        <div class="scroller"><div class="grid mine" id="gridMine"></div></div>
+      </section>
+      <section class="pane group">
+        <h2>What everyone sees</h2>
+        <div class="sub">Only saved answers show here. Tap a slot to see who's in.</div>
+        <div class="legend" id="heatLegend"></div>
+        <div class="scroller"><div class="grid group" id="gridGroup"></div></div>
+      </section>
+      <aside class="side">
+        <section class="pane">
+          <h2 id="detailTitle">Responses</h2>
+          <div class="sub" id="detailSub"></div>
+          <ul class="who" id="who"></ul>
+        </section>
+        <section class="pane">
+          <h2>Best times</h2>
+          <div class="sub">Longest blocks with the most people.</div>
+          <ul class="best" id="best"></ul>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <footer>Find a Time · answers are visible to anyone with the link</footer>
+</div>
+
+<div class="savebar" id="savebar" hidden>
+  <div class="in">
+    <span class="pill idle" id="pill">Nothing marked</span>
+    <span class="msg" id="saveMsg"></span>
+    <div class="acts">
+      <button class="btn" id="revertBtn" hidden>Undo changes</button>
+      <button class="btn" id="clearBtn">Clear</button>
+      <button class="savebtn" id="saveBtn" disabled>Save</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!-- jallahbowwwww bahahahabhahahabehehbe. -->
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const CFG=window.FAT_CONFIG||{};
+const SLOT=30;
+const params=new URLSearchParams(location.search);
+const pollId=(params.get("p")||"").replace(/[^a-z0-9]/gi,"");
+
+/* ---------- storage (best effort) ---------- */
+const store={get(k){try{return JSON.parse(localStorage.getItem("fat:"+k))}catch(e){return null}},set(k,v){try{localStorage.setItem("fat:"+k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem("fat:"+k)}catch(e){}}};
+const uuid=()=>(crypto.randomUUID?crypto.randomUUID():"10000000-1000-4000-8000-100000000000".replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16)));
+
+/* ---------- API ---------- */
+async function rpc(fn,args){
+  const res=await fetch(CFG.SUPABASE_URL.replace(/\/$/,"")+"/rest/v1/rpc/"+fn,{
+    method:"POST",
+    headers:Object.assign({"Content-Type":"application/json","apikey":CFG.SUPABASE_KEY},
+      CFG.SUPABASE_KEY.startsWith("eyJ")?{"Authorization":"Bearer "+CFG.SUPABASE_KEY}:{}),
+    body:JSON.stringify(args||{})
+  });
+  const text=await res.text();let body=null;try{body=text?JSON.parse(text):null}catch(e){body=text}
+  if(!res.ok){const m=(body&&body.message)||("HTTP "+res.status);const err=new Error(m);err.code=m;throw err}
+  return body;
+}
+
+/* ---------- helpers ---------- */
+const pad=n=>String(n).padStart(2,"0");
+const parseD=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const fmtMin=m=>pad(Math.floor(m/60))+":"+pad(m%60);
+const WD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const dayLabel=s=>{const d=parseD(s);return WD[d.getDay()]+" "+d.getDate()+" "+MO[d.getMonth()]};
+const key=(date,m)=>date+"T"+fmtMin(m);
+const sameSet=(a,b)=>a.size===b.size&&[...a].every(x=>b.has(x));
+function toast(t){const el=$("toast");el.textContent=t;el.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove("show"),3400)}
+function ago(t){if(!t)return"";const s=Math.round((Date.now()-t)/1000);if(s<60)return"just now";const m=Math.round(s/60);if(m<60)return m+" min ago";const h=Math.round(m/60);if(h<24)return h+" h ago";return Math.round(h/24)+" d ago"}
+function showErr(t){$("errNotice").hidden=!t;$("errNotice").textContent=t||""}
+function colorFor(name){let h=0;for(const ch of name.toLowerCase())h=(h*31+ch.charCodeAt(0))%360;return"hsl("+h+" 55% 45%)"}
+async function copy(text,okMsg){
+  try{await navigator.clipboard.writeText(text);toast(okMsg)}
+  catch(e){window.prompt("Copy this link:",text)}
+}
+
+/* ---------- state ---------- */
+let poll=null, me=null; // me = {name, token}
+let mine=new Set(), saved=new Set(), mySavedAt=null, saving=false;
+let responses=[]; // [{name, slots:Set, at}]
+let selKey=null;
+const slotsOf=()=>{const o=[];for(let m=poll.start_hour*60;m<poll.end_hour*60;m+=SLOT)o.push(m);return o};
+const validKeys=()=>{const s=new Set();for(const d of poll.dates)for(const m of slotsOf())s.add(key(d,m));return s};
+
+/* ================= CREATE / EDIT ================= */
+let draft=new Set(), calOffset=0, editing=false;
+function hourOpts(sel){let s="";for(let i=0;i<=24;i++)s+='<option value="'+i+'"'+(i===sel?" selected":"")+">"+pad(i)+":00</option>";return s}
+function openSetup(edit){
+  editing=!!edit;
+  $("setup").hidden=false;
+  $("setupTitle").textContent=edit?"Edit poll":"New poll";
+  $("setupLede").textContent=edit?"Changes show up for everyone. Answers on removed days or hours are kept but hidden.":"Pick the days and hours people can choose from. You'll get a link to send around. Nobody needs an account.";
+  $("cfgSave").textContent=edit?"Save changes":"Create poll";
+  $("cfgCancel").hidden=!edit;
+  $("cfgTitle").value=edit?poll.title:"";
+  $("cfgStart").innerHTML=hourOpts(edit?poll.start_hour:9);
+  $("cfgEnd").innerHTML=hourOpts(edit?poll.end_hour:18);
+  $("cfgTz").textContent=edit?poll.tz:(Intl.DateTimeFormat().resolvedOptions().timeZone||"Europe/Brussels");
+  draft=new Set(edit?poll.dates:[]);calOffset=0;renderCal();
+  if(!edit)$("cfgTitle").focus();
+}
+function renderCal(){
+  const cal=$("cal");cal.innerHTML="";
+  ["M","T","W","T","F","S","S"].forEach(w=>{const d=document.createElement("div");d.className="wd";d.textContent=w;cal.appendChild(d)});
+  const today=new Date();today.setHours(0,0,0,0);
+  const start=new Date(today);start.setDate(start.getDate()-((start.getDay()+6)%7)+calOffset*7);
+  for(let i=0;i<42;i++){
+    const d=new Date(start);d.setDate(start.getDate()+i);
+    if(i%7===0){
+      let label=i===0?d:null;
+      for(let j=0;j<7&&!label;j++){const x=new Date(d);x.setDate(d.getDate()+j);if(x.getDate()===1)label=x}
+      if(label){const mo=document.createElement("div");mo.className="mo";mo.textContent=MO[label.getMonth()]+" "+label.getFullYear();cal.appendChild(mo)}
+    }
+    const b=document.createElement("button");b.type="button";const s=iso(d);
+    b.textContent=d.getDate();b.className=(draft.has(s)?"on":"")+(d<today?" past":"");b.title=dayLabel(s);b.setAttribute("aria-pressed",draft.has(s));
+    b.onclick=()=>{draft.has(s)?draft.delete(s):draft.add(s);renderCal()};
+    cal.appendChild(b);
+  }
+  const end=new Date(start);end.setDate(start.getDate()+41);
+  $("calRange").textContent=start.getDate()+" "+MO[start.getMonth()]+" – "+end.getDate()+" "+MO[end.getMonth()];
+  $("dayCount").textContent="· "+draft.size+" picked";
+}
+$("calPrev").onclick=()=>{calOffset=Math.max(calOffset-4,-8);renderCal()};
+$("calNext").onclick=()=>{calOffset+=4;renderCal()};
+$("cfgCancel").onclick=()=>{$("setup").hidden=true};
+$("cfgSave").onclick=async()=>{
+  const s=+$("cfgStart").value,e=+$("cfgEnd").value,title=$("cfgTitle").value.trim();
+  if(!title){toast("Give the poll a name.");$("cfgTitle").focus();return}
+  if(e<=s){toast("“Latest” has to be after “Earliest”.");return}
+  if(!draft.size){toast("Pick at least one day.");return}
+  if(draft.size>21){toast("Pick 21 days or fewer.");return}
+  const dates=[...draft].sort();
+  $("cfgSave").disabled=true;
+  try{
+    if(editing){
+      await rpc("update_poll",{p_id:poll.id,p_owner_token:store.get("owner:"+poll.id),p_title:title,p_dates:dates,p_start:s,p_end:e});
+      toast("Poll updated for everyone.");$("setup").hidden=true;await loadPoll(true);
+    }else{
+      const owner=uuid();
+      const id=await rpc("create_poll",{p_title:title,p_dates:dates,p_start:s,p_end:e,p_tz:$("cfgTz").textContent,p_owner_token:owner});
+      store.set("owner:"+id,owner);
+      location.href="?p="+encodeURIComponent(id)+"&new=1";
+    }
+  }catch(err){toast(err.code==="not_owner"?"Only the person who created this poll can edit it.":"Couldn't save: "+err.message)}
+  $("cfgSave").disabled=false;
+};
+
+/* ================= POLL VIEW ================= */
+function buildGrid(el){
+  el.innerHTML="";const slots=slotsOf();
+  el.style.gridTemplateColumns="auto repeat("+poll.dates.length+",minmax(44px,1fr))";
+  el.appendChild(document.createElement("div"));
+  poll.dates.forEach(d=>{const h=document.createElement("div");h.className="dh";const dd=parseD(d);h.textContent=WD[dd.getDay()];const s=document.createElement("span");s.textContent=dd.getDate()+" "+MO[dd.getMonth()];h.appendChild(s);el.appendChild(h)});
+  slots.forEach((m,si)=>{
+    const tl=document.createElement("div");tl.className="tl";tl.textContent=m%60===0?fmtMin(m):"";el.appendChild(tl);
+    poll.dates.forEach((d,di)=>{const c=document.createElement("div");c.className="c"+(m%60===0?" hr":"");c.dataset.k=key(d,m);c.dataset.di=di;c.dataset.si=si;el.appendChild(c)});
+  });
+}
+function paintMine(){
+  $("gridMine").classList.toggle("locked",!me);
+  $("gridMine").querySelectorAll(".c").forEach(c=>{const k=c.dataset.k,on=mine.has(k);c.classList.toggle("on",on);c.classList.toggle("unsaved",on!==saved.has(k))});
+  updateSaveBar();
+}
+function counts(){
+  const valid=validKeys(),cnt=new Map(),ppl=new Map();
+  for(const r of responses)for(const k of r.slots){if(!valid.has(k))continue;cnt.set(k,(cnt.get(k)||0)+1);if(!ppl.has(k))ppl.set(k,new Set());ppl.get(k).add(r.name)}
+  return{cnt,ppl};
+}
+function heatVar(n,total){if(!n)return"var(--heat0)";const r=n/Math.max(total,1);return r>=1?"var(--heat4)":r>=.66?"var(--heat3)":r>=.33?"var(--heat2)":"var(--heat1)"}
+function paintGroup(){
+  const{cnt,ppl}=counts(),total=responses.length;
+  $("gridGroup").querySelectorAll(".c").forEach(c=>{const n=cnt.get(c.dataset.k)||0;c.style.background=heatVar(n,total);c.classList.toggle("sel",c.dataset.k===selKey);c.title=n+"/"+total+" available"});
+  const lg=$("heatLegend");lg.innerHTML="";
+  const steps=total?[0,Math.ceil(total*.33),Math.ceil(total*.66),total].filter((v,i,a)=>a.indexOf(v)===i):[0];
+  steps.forEach(n=>{const i=document.createElement("i");i.style.background=heatVar(n,total);lg.appendChild(i);lg.appendChild(document.createTextNode(n+"/"+total+" "))});
+
+  const who=$("who");who.innerHTML="";
+  const addWho=(name,right,no)=>{const li=document.createElement("li");if(no)li.className="no";const av=document.createElement("span");av.className="av";av.style.background=colorFor(name);av.textContent=name.trim()[0].toUpperCase();const n=document.createElement("span");n.className="nm";n.textContent=name+(me&&me.name.toLowerCase()===name.toLowerCase()?" (you)":"");const t=document.createElement("span");t.className="t";t.textContent=right;li.append(av,n,t);who.appendChild(li)};
+  if(selKey){
+    const[d,t]=selKey.split("T");const[h,mi]=t.split(":").map(Number);
+    $("detailTitle").textContent=dayLabel(d)+", "+t+"–"+fmtMin(h*60+mi+SLOT);
+    const yes=ppl.get(selKey)||new Set();
+    $("detailSub").textContent=yes.size+" of "+total+" can make it";
+    [...responses].sort((a,b)=>yes.has(b.name)-yes.has(a.name)).forEach(r=>addWho(r.name,yes.has(r.name)?"✓":"✗",!yes.has(r.name)));
+  }else{
+    $("detailTitle").textContent="Responses";
+    $("detailSub").textContent=total?total+(total===1?" person has":" people have")+" saved":"";
+    [...responses].sort((a,b)=>b.at-a.at).forEach(r=>addWho(r.name,ago(r.at),false));
+    if(!total)who.innerHTML='<li class="empty">Nobody has saved yet. Mark your times and press Save to be first.</li>';
+  }
+  const best=$("best");best.innerHTML="";
+  if(!total){best.innerHTML='<li class="empty" style="background:none;padding:0;cursor:default">Appears once people save.</li>';return}
+  const blocks=[],slots=slotsOf();
+  for(const d of poll.dates){let cur=null;for(const m of slots){const k=key(d,m),n=cnt.get(k)||0,sig=n?[...ppl.get(k)].sort().join("|"):"";
+    if(n&&cur&&cur.sig===sig)cur.end=m+SLOT;else{if(cur)blocks.push(cur);cur=n?{d,start:m,end:m+SLOT,n,sig,k}:null}}if(cur)blocks.push(cur)}
+  blocks.sort((a,b)=>b.n-a.n||(b.end-b.start)-(a.end-a.start)).slice(0,5).forEach(b=>{
+    const li=document.createElement("li");li.tabIndex=0;
+    const l=document.createElement("span");l.textContent=dayLabel(b.d)+" ";const tb=document.createElement("b");tb.textContent=fmtMin(b.start)+"–"+fmtMin(b.end);l.appendChild(tb);
+    const n=document.createElement("span");n.className="n";n.textContent=b.n+"/"+total;
+    li.append(l,n);const pick=()=>{selKey=b.k;paintGroup()};li.onclick=pick;li.onkeydown=e=>{if(e.key==="Enter")pick()};
+    best.appendChild(li);
+  });
+}
+
+/* drag painting */
+let drag=null;
+function cellAt(x,y){const el=document.elementFromPoint(x,y);return el&&el.classList&&el.classList.contains("c")&&el.closest("#gridMine")?el:null}
+function applyRect(c){
+  const a=drag.start,di0=Math.min(a.di,+c.dataset.di),di1=Math.max(a.di,+c.dataset.di),si0=Math.min(a.si,+c.dataset.si),si1=Math.max(a.si,+c.dataset.si);
+  const next=new Set(drag.snap),slots=slotsOf();
+  for(let di=di0;di<=di1;di++)for(let si=si0;si<=si1;si++){const k=key(poll.dates[di],slots[si]);drag.add?next.add(k):next.delete(k)}
+  mine=next;paintMine();
+}
+$("gridMine").addEventListener("pointerdown",e=>{
+  const c=e.target.closest(".c");if(!c)return;
+  if(!me){toast("Type your name first.");$("nameInput").focus();return}
+  e.preventDefault();
+  drag={start:{di:+c.dataset.di,si:+c.dataset.si},add:!mine.has(c.dataset.k),snap:new Set(mine),last:c};applyRect(c);
+});
+window.addEventListener("pointermove",e=>{if(!drag)return;const c=cellAt(e.clientX,e.clientY);if(c&&c!==drag.last){drag.last=c;applyRect(c)}});
+window.addEventListener("pointerup",()=>{drag=null});window.addEventListener("pointercancel",()=>{drag=null});
+$("gridGroup").addEventListener("click",e=>{const c=e.target.closest(".c");if(!c)return;selKey=selKey===c.dataset.k?null:c.dataset.k;paintGroup()});
+
+/* save bar */
+function updateSaveBar(){
+  const dirty=!sameSet(mine,saved),bar=$("savebar"),pill=$("pill"),msg=$("saveMsg"),btn=$("saveBtn");
+  bar.classList.toggle("isdirty",dirty);
+  $("revertBtn").hidden=!dirty||!mySavedAt;
+  $("clearBtn").disabled=!mine.size||!me;
+  btn.textContent=saving?"Saving…":"Save";
+  if(!me){pill.className="pill idle";pill.textContent="Who are you?";msg.textContent="Type your name above, then mark your times.";btn.disabled=true;return}
+  if(saving){pill.className="pill dirty";pill.textContent="Saving…";btn.disabled=true;return}
+  if(dirty){const n=mine.size;pill.className="pill dirty";pill.textContent="Not saved";msg.textContent=(mySavedAt?"You changed your times. Nobody sees these changes":"Nobody can see your "+n+" slot"+(n===1?"":"s"))+" until you press Save.";btn.disabled=false}
+  else if(mySavedAt){pill.className="pill saved";pill.textContent="Saved";msg.textContent="Everyone with the link can see your "+saved.size+" slot"+(saved.size===1?"":"s")+". Last saved "+ago(mySavedAt)+".";btn.disabled=true}
+  else{pill.className="pill idle";pill.textContent="Nothing marked";msg.textContent="Mark your free slots, then press Save so others can see them.";btn.disabled=true}
+}
+setInterval(()=>{if(poll&&mySavedAt&&sameSet(mine,saved))updateSaveBar()},30000);
+
+$("saveBtn").onclick=async()=>{
+  if(!me||saving)return;saving=true;updateSaveBar();
+  const slots=[...mine].sort();
+  try{
+    const ts=await rpc("save_response",{p_poll:poll.id,p_name:me.name,p_slots:slots,p_token:me.token});
+    saved=new Set(mine);mySavedAt=Date.parse(ts)||Date.now();
+    store.set("me:"+poll.id,me);
+    toast(slots.length?"Saved. Everyone with the link can see your times now.":"Saved. Your times are cleared.");
+    await refresh();
+  }catch(e){
+    if(e.code==="name_taken"){toast("Someone already saved as “"+me.name+"”. Pick another name, or use your edit link if it's you.");me=null;showNameGate()}
+    else toast("Couldn't save. Check your connection and press Save again.");
+  }
+  saving=false;paintMine();
+};
+$("clearBtn").onclick=()=>{mine=new Set();paintMine()};
+$("revertBtn").onclick=()=>{mine=new Set(saved);paintMine()};
+window.addEventListener("beforeunload",e=>{if(poll&&!sameSet(mine,saved)){e.preventDefault();e.returnValue=""}});
+
+/* identity */
+function showNameGate(){$("nameForm").hidden=false;$("meBar").hidden=true;paintMine()}
+function showMe(){$("nameForm").hidden=true;$("meBar").hidden=false;$("meName").textContent=me.name;paintMine()}
+$("nameForm").onsubmit=e=>{
+  e.preventDefault();const name=$("nameInput").value.trim().replace(/\s+/g," ");if(!name)return;
+  const existing=responses.find(r=>r.name.toLowerCase()===name.toLowerCase());
+  if(existing){toast("“"+existing.name+"” has already answered. If that's you, open your edit link. Otherwise add a last initial.");return}
+  me={name,token:uuid()};store.set("me:"+poll.id,me);showMe();
+};
+$("notMe").onclick=()=>{
+  if(!sameSet(mine,saved)&&mine.size){toast("Save or undo your changes first.");return}
+  me=null;store.del("me:"+poll.id);mine=new Set();saved=new Set();mySavedAt=null;$("nameInput").value="";showNameGate();
+};
+$("myLink").onclick=()=>{
+  const u=new URL(location.href);u.search="?p="+poll.id+"&me="+encodeURIComponent(me.name)+"&k="+me.token;
+  copy(u.toString(),"Personal edit link copied. Keep it to yourself; anyone with it can change your answers.");
+};
+$("copyLink").onclick=()=>{const u=new URL(location.href);u.search="?p="+poll.id;u.hash="";copy(u.toString(),"Link copied. Send it to the group.")};
+$("editBtn").onclick=()=>openSetup(true);
+
+/* tabs */
+function setTab(t){$("panes").dataset.tab=t;$("tabMine").setAttribute("aria-selected",t==="mine");$("tabGroup").setAttribute("aria-selected",t==="group")}
+$("tabMine").onclick=()=>setTab("mine");$("tabGroup").onclick=()=>setTab("group");
+
+/* data */
+async function refresh(){
+  const rows=await rpc("get_responses",{p_poll:poll.id});
+  responses=(rows||[]).map(r=>({name:r.name,slots:new Set(r.slots||[]),at:Date.parse(r.updated_at)}));
+  if(me){
+    const r=responses.find(x=>x.name.toLowerCase()===me.name.toLowerCase());
+    if(r){const clean=sameSet(mine,saved);saved=new Set(r.slots);mySavedAt=r.at;if(clean)mine=new Set(saved);me.name=r.name;$("meName").textContent=r.name}
+  }
+  paintMine();paintGroup();
+}
+async function loadPoll(rebuild){
+  const rows=await rpc("get_poll",{p_id:pollId});
+  if(!rows||!rows.length){showErr("This poll doesn't exist. Check the link, or create a new one.");$("pollView").hidden=true;return false}
+  const prev=poll?JSON.stringify([poll.dates,poll.start_hour,poll.end_hour]):"";
+  poll=rows[0];poll.dates=(poll.dates||[]).map(String);
+  document.title=poll.title+" · Find a Time";
+  $("title").textContent=poll.title;
+  const ds=poll.dates;
+  $("meta").textContent=dayLabel(ds[0])+(ds.length>1?" – "+dayLabel(ds[ds.length-1]):"")+" · "+fmtMin(poll.start_hour*60)+"–"+fmtMin(poll.end_hour*60)+" · times in "+poll.tz+" · 30-min slots";
+  $("editBtn").hidden=!store.get("owner:"+poll.id);
+  if(rebuild||prev!==JSON.stringify([poll.dates,poll.start_hour,poll.end_hour])){buildGrid($("gridMine"));buildGrid($("gridGroup"))}
+  return true;
+}
+
+async function boot(){
+  if(!CFG.SUPABASE_URL||!CFG.SUPABASE_KEY){$("cfgNotice").hidden=false;return}
+  if(!pollId){openSetup(false);return}
+  $("pollView").hidden=false;$("savebar").hidden=false;
+  try{if(!await loadPoll(true)){$("savebar").hidden=true;return}}
+  catch(e){showErr("Couldn't reach the server. Check your connection and reload.");return}
+  // identity: from edit link, else from this browser
+  const lk=params.get("k"),ln=params.get("me");
+  if(lk&&ln){me={name:ln,token:lk};store.set("me:"+poll.id,me);history.replaceState(null,"","?p="+poll.id)}
+  else me=store.get("me:"+poll.id);
+  if(params.get("new")){history.replaceState(null,"","?p="+poll.id);toast("Poll created. Copy the link and send it around.")}
+  me?showMe():showNameGate();
+  try{await refresh()}catch(e){showErr("Couldn't load answers. Reload to try again.")}
+  setInterval(()=>{if(document.visibilityState==="visible"&&!drag)refresh().then(()=>showErr("")).catch(()=>{})},10000);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")loadPoll(false).then(refresh).catch(()=>{})});
+}
+boot();
+})();
+</script>
+</body>
+</html>
