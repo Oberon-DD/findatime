@@ -95,11 +95,32 @@ h1{font:800 clamp(28px,4.4vw,46px)/1.02 var(--f-display);letter-spacing:-.02em;m
 .me b{color:var(--ink)}
 .linkish{background:none;border:0;padding:0;color:var(--mine);text-decoration:underline;font-size:14px}
 
-.tabs{display:none;gap:6px;background:var(--cell);padding:4px;border-radius:10px;width:fit-content}
+.tabs{display:flex;gap:6px;background:var(--cell);padding:4px;border-radius:10px;width:fit-content}
 .tabs button{border:0;background:transparent;padding:7px 14px;border-radius:7px;color:var(--muted);font-weight:500}
 .tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink)}
 
-.panes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 260px;gap:18px;align-items:start}
+/* layout: [grids][side]; grids show side by side when both fit, otherwise one at a time with tabs */
+.panes{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:18px;align-items:start}
+.grids{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start;min-width:0}
+.grids.tabbed{grid-template-columns:minmax(0,1fr)}
+.grids.tabbed[data-tab="mine"] .pane.group,.grids.tabbed[data-tab="group"] .pane.mine-pane{display:none}
+
+/* step-by-step instructions */
+.steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.steps li{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.steps .n{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 13px var(--f-mono);background:var(--cell);color:var(--muted)}
+.steps b{display:block;font-size:14px}
+.steps small{display:block;color:var(--muted);font-size:12.5px;line-height:1.4;margin-top:2px}
+.steps li.now{border-color:var(--mine);box-shadow:0 0 0 1px var(--mine)}
+.steps li.now .n{background:var(--mine);color:#fff}
+.steps li.done .n{background:var(--ok-soft);color:var(--ok)}
+.steps li.done .n::before{content:"✓"}
+.steps li.done .n span{display:none}
+.steps li.done b{color:var(--muted)}
+.howto{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0;padding:0;list-style:none}
+.howto li{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px}
+.howto li b{display:block;font:700 15px var(--f-display);margin-bottom:2px}
+.howto .n{font:600 12px var(--f-mono);color:var(--mine)}
 .pane{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
 .pane h2{font:700 19px/1.2 var(--f-display);margin:0}
 .pane .sub{color:var(--muted);font-size:13px;margin:4px 0 12px}
@@ -107,11 +128,15 @@ h1{font:800 clamp(28px,4.4vw,46px)/1.02 var(--f-display);letter-spacing:-.02em;m
 .legend i{width:16px;height:12px;border-radius:3px;display:inline-block}
 
 .scroller{overflow-x:auto;padding-bottom:4px}
-.grid{display:grid;user-select:none;-webkit-user-select:none;touch-action:none;width:max-content;min-width:100%}
-.grid .dh{font:600 12px/1.2 var(--f-body);text-align:center;padding:0 2px 8px}
-.grid .dh span{display:block;font:400 11px var(--f-mono);color:var(--muted)}
-.grid .tl{font:400 11px/1 var(--f-mono);color:var(--muted);text-align:right;padding-right:8px;transform:translateY(-6px);font-variant-numeric:tabular-nums;white-space:nowrap}
-.c{height:18px;min-width:44px;background:var(--cell);border-right:2px solid var(--surface);border-bottom:1px solid var(--surface)}
+.grid{display:grid;user-select:none;-webkit-user-select:none;touch-action:none;width:100%}
+.grid .dh{font:600 12px/1.15 var(--f-body);text-align:center;padding:0 0 8px;min-width:0;overflow:hidden;white-space:nowrap}
+.grid .dh span{display:block;font:500 12px var(--f-mono);color:var(--ink);font-variant-numeric:tabular-nums}
+.grid .dh em{display:block;font:400 10px var(--f-mono);color:var(--muted);font-style:normal;min-height:12px}
+.grid.tight .dh{font-size:10px}
+.grid.tight .dh span{font-size:10px}
+.grid .tl{font:400 11px/1 var(--f-mono);color:var(--muted);text-align:right;padding-right:6px;transform:translateY(-6px);font-variant-numeric:tabular-nums;white-space:nowrap}
+.c{height:18px;min-width:0;background:var(--cell);border-right:2px solid var(--surface);border-bottom:1px solid var(--surface)}
+.grid .gapL{margin-left:6px}
 .c.hr{border-top:1px solid var(--line)}
 .mine .c{cursor:crosshair}
 .mine .c.on{background:var(--mine)}
@@ -197,12 +222,12 @@ footer a{color:var(--muted)}
 .support:hover{border-color:var(--muted)}
 @media (max-width:760px){.hero{grid-template-columns:1fr}}
 
-@media (max-width:1000px){.panes{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.side{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr}}
+@media (max-width:1000px){.panes{grid-template-columns:minmax(0,1fr)}.side{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:760px){
-  .tabs{display:flex}
-  .panes{grid-template-columns:minmax(0,1fr)}
-  .panes[data-tab="mine"] .pane.group,.panes[data-tab="group"] .pane.mine-pane{display:none}
   .side{grid-template-columns:1fr}
+  .steps,.howto{grid-template-columns:1fr}
+  .steps li{padding:9px 12px}
+  .pane{padding:12px}
   .setup{grid-template-columns:1fr}
   .savebtn{padding:11px 20px}
 }
@@ -235,6 +260,11 @@ footer a{color:var(--muted)}
       <div class="bar"><span class="pill saved">Saved</span><span>4 of 5 people can make Wed 10:00–11:30</span></div>
     </div>
   </section>
+  <ol class="howto" id="howto" hidden>
+    <li><span class="n">Step 1</span><b>Pick days and hours</b>Give the poll a name, click the days on the calendar, and set the earliest and latest time.</li>
+    <li><span class="n">Step 2</span><b>Send the link</b>Press Create poll, then Copy link to share. Paste it in your group chat or email.</li>
+    <li><span class="n">Step 3</span><b>Pick the best time</b>Everyone marks their free times and presses Save. The green slots and Best times list show what works.</li>
+  </ol>
 
   <!-- ===== CREATE / EDIT VIEW ===== -->
   <section class="setup" id="setup" hidden>
@@ -273,11 +303,16 @@ footer a{color:var(--muted)}
       </div>
     </header>
 
+    <ol class="steps" id="steps" aria-label="How to fill in this poll">
+      <li data-s="1"><span class="n"><span>1</span></span><div><b>Type your name</b><small>So others know whose times these are. No account needed.</small></div></li>
+      <li data-s="2"><span class="n"><span>2</span></span><div><b>Drag over the times you're free</b><small>Click and drag (or swipe on a phone). Drag over blue slots to unmark them.</small></div></li>
+      <li data-s="3"><span class="n"><span>3</span></span><div><b>Press Save</b><small>Until you do, nobody sees your times. The bar at the bottom turns green when they're saved.</small></div></li>
+    </ol>
+
     <form class="namebar" id="nameForm" hidden>
       <label for="nameInput">Your name</label>
       <input id="nameInput" maxlength="40" autocomplete="given-name" placeholder="e.g. Oberon" required>
       <button class="btn primary" type="submit">Start marking</button>
-      <span class="hint">So others know whose times these are. No account needed.</span>
     </form>
     <div class="me" id="meBar" hidden>
       <span>Answering as <b id="meName"></b></span>
@@ -290,15 +325,16 @@ footer a{color:var(--muted)}
         <button type="button" class="btn" id="removeNo">Keep them</button></span>
     </div>
 
-    <div class="tabs" role="tablist">
+    <div class="tabs" role="tablist" id="tabs" hidden>
       <button role="tab" id="tabMine" aria-selected="true">Your times</button>
-      <button role="tab" id="tabGroup" aria-selected="false">Everyone</button>
+      <button role="tab" id="tabGroup" aria-selected="false">Everyone's times</button>
     </div>
 
-    <div class="panes" id="panes" data-tab="mine">
+    <div class="panes" id="panes">
+     <div class="grids" id="grids" data-tab="mine">
       <section class="pane mine-pane">
         <h2>Your times</h2>
-        <div class="sub">Click and drag to mark when you can make it. Drag over marked slots to unmark.</div>
+        <div class="sub">Drag to mark when you can make it. Drag over blue slots to unmark.</div>
         <div class="legend"><i style="background:var(--cell)"></i>busy <i style="background:var(--mine)"></i>free <i style="background:var(--cell);box-shadow:inset 0 0 0 2px var(--warn)"></i>not saved yet</div>
         <div class="scroller"><div class="grid mine" id="gridMine"></div></div>
       </section>
@@ -308,6 +344,7 @@ footer a{color:var(--muted)}
         <div class="legend" id="heatLegend"></div>
         <div class="scroller"><div class="grid group" id="gridGroup"></div></div>
       </section>
+     </div>
       <aside class="side">
         <section class="pane">
           <h2 id="detailTitle">Responses</h2>
@@ -472,14 +509,41 @@ $("cfgSave").onclick=async()=>{
 /* ================= POLL VIEW ================= */
 function buildGrid(el){
   el.innerHTML="";const slots=slotsOf();
-  el.style.gridTemplateColumns="auto repeat("+poll.dates.length+",minmax(44px,1fr))";
+  el.style.gridTemplateColumns="auto repeat("+poll.dates.length+",minmax(0,1fr))";
   el.appendChild(document.createElement("div"));
-  poll.dates.forEach(d=>{const h=document.createElement("div");h.className="dh";const dd=parseD(d);h.textContent=WD[dd.getDay()];const s=document.createElement("span");s.textContent=dd.getDate()+" "+MO[dd.getMonth()];h.appendChild(s);el.appendChild(h)});
+  // a small gap before a day that doesn't follow the previous one (e.g. a skipped week)
+  const gap=poll.dates.map((d,i)=>i>0&&(parseD(d)-parseD(poll.dates[i-1]))>86400000*1.5);
+  poll.dates.forEach((d,i)=>{
+    const dd=parseD(d),h=document.createElement("div");h.className="dh"+(gap[i]?" gapL":"");h.title=dayLabel(d);
+    const w=document.createElement("b");w.className="wd";w.dataset.full=WD[dd.getDay()];w.dataset.short=WD[dd.getDay()].slice(0,2);w.dataset.tiny=WD[dd.getDay()][0];w.textContent=w.dataset.full;
+    const s=document.createElement("span");s.textContent=dd.getDate();
+    const m=document.createElement("em");m.textContent=(i===0||parseD(poll.dates[i-1]).getMonth()!==dd.getMonth())?MO[dd.getMonth()]:"";
+    h.append(w,s,m);el.appendChild(h);
+  });
   slots.forEach((m,si)=>{
     const tl=document.createElement("div");tl.className="tl";tl.textContent=m%60===0?fmtMin(m):"";el.appendChild(tl);
-    poll.dates.forEach((d,di)=>{const c=document.createElement("div");c.className="c"+(m%60===0?" hr":"");c.dataset.k=key(d,m);c.dataset.di=di;c.dataset.si=si;el.appendChild(c)});
+    poll.dates.forEach((d,di)=>{const c=document.createElement("div");c.className="c"+(m%60===0?" hr":"")+(gap[di]?" gapL":"");c.dataset.k=key(d,m);c.dataset.di=di;c.dataset.si=si;el.appendChild(c)});
   });
 }
+
+/* Fit the grids to the screen: side by side when each day column gets enough room,
+   otherwise one grid at a time with tabs. Day labels shrink on narrow columns. */
+function fitGrids(){
+  if(!poll)return;
+  const n=poll.dates.length,g=$("grids"),total=g.clientWidth;if(!total)return;
+  const labelW=46,pad=34;
+  const colSplit=((total-18)/2-pad-labelW)/n;
+  const tabbed=colSplit<26;
+  g.classList.toggle("tabbed",tabbed);$("tabs").hidden=!tabbed;
+  const col=tabbed?(total-pad-labelW)/n:colSplit;
+  const mode=col>=40?"full":col>=22?"short":"tiny";
+  document.querySelectorAll(".grid").forEach(el=>{
+    el.classList.toggle("tight",mode!=="full");
+    el.querySelectorAll(".dh .wd").forEach(w=>w.textContent=w.dataset[mode]);
+    el.querySelectorAll(".dh em").forEach(e=>e.style.display=mode==="tiny"?"none":"");
+  });
+}
+let fitT;window.addEventListener("resize",()=>{clearTimeout(fitT);fitT=setTimeout(fitGrids,80)});
 function paintMine(){
   $("gridMine").classList.toggle("locked",!me);
   $("gridMine").querySelectorAll(".c").forEach(c=>{const k=c.dataset.k,on=mine.has(k);c.classList.toggle("on",on);c.classList.toggle("unsaved",on!==saved.has(k))});
@@ -546,7 +610,14 @@ window.addEventListener("pointerup",()=>{drag=null});window.addEventListener("po
 $("gridGroup").addEventListener("click",e=>{const c=e.target.closest(".c");if(!c)return;selKey=selKey===c.dataset.k?null:c.dataset.k;paintGroup()});
 
 /* save bar */
+function updateSteps(){
+  const dirtyNow=!sameSet(mine,saved);
+  const done=[!!me, mine.size>0||!!mySavedAt, !!mySavedAt&&!dirtyNow];
+  const now=done.indexOf(false);
+  document.querySelectorAll("#steps li").forEach((li,i)=>{li.classList.toggle("done",done[i]&&(now<0||i<now));li.classList.toggle("now",i===now)});
+}
 function updateSaveBar(){
+  updateSteps();
   const dirty=!sameSet(mine,saved),bar=$("savebar"),pill=$("pill"),msg=$("saveMsg"),btn=$("saveBtn");
   bar.classList.toggle("isdirty",dirty);
   $("revertBtn").hidden=!dirty||!mySavedAt;
@@ -601,7 +672,7 @@ $("copyLink").onclick=()=>{const u=new URL(location.href);u.search="?p="+poll.id
 $("editBtn").onclick=()=>openSetup(true);
 
 /* tabs */
-function setTab(t){$("panes").dataset.tab=t;$("tabMine").setAttribute("aria-selected",t==="mine");$("tabGroup").setAttribute("aria-selected",t==="group")}
+function setTab(t){$("grids").dataset.tab=t;$("tabMine").setAttribute("aria-selected",t==="mine");$("tabGroup").setAttribute("aria-selected",t==="group")}
 $("tabMine").onclick=()=>setTab("mine");$("tabGroup").onclick=()=>setTab("group");
 
 /* data */
@@ -624,7 +695,7 @@ async function loadPoll(rebuild){
   const ds=poll.dates;
   $("meta").textContent=dayLabel(ds[0])+(ds.length>1?" – "+dayLabel(ds[ds.length-1]):"")+" · "+fmtMin(poll.start_hour*60)+"–"+fmtMin(poll.end_hour*60)+" · times in "+poll.tz+" · 30-min slots";
   $("editBtn").hidden=!store.get("owner:"+poll.id);
-  if(rebuild||prev!==JSON.stringify([poll.dates,poll.start_hour,poll.end_hour])){buildGrid($("gridMine"));buildGrid($("gridGroup"))}
+  if(rebuild||prev!==JSON.stringify([poll.dates,poll.start_hour,poll.end_hour])){buildGrid($("gridMine"));buildGrid($("gridGroup"));requestAnimationFrame(fitGrids)}
   return true;
 }
 
@@ -655,7 +726,7 @@ $("removeYes").onclick=async()=>{
 
 async function boot(){
   if(!CFG.SUPABASE_URL||!CFG.SUPABASE_KEY){$("cfgNotice").hidden=false;return}
-  if(!pollId){$("hero").hidden=false;renderDemo();openSetup(false);$("cfgTitle").blur();return}
+  if(!pollId){$("hero").hidden=false;$("howto").hidden=false;renderDemo();openSetup(false);$("cfgTitle").blur();return}
   $("pollView").hidden=false;$("savebar").hidden=false;
   try{if(!await loadPoll(true)){$("savebar").hidden=true;return}}
   catch(e){showErr("Couldn't reach the server. Check your connection and reload.");return}
