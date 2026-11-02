@@ -543,7 +543,10 @@ function fitGrids(){
     el.querySelectorAll(".dh em").forEach(e=>e.style.display=mode==="tiny"?"none":"");
   });
 }
-let fitT;window.addEventListener("resize",()=>{clearTimeout(fitT);fitT=setTimeout(fitGrids,80)});
+let fitT,lastFitW=0;const refit=()=>{clearTimeout(fitT);fitT=setTimeout(fitGrids,60)};
+window.addEventListener("resize",refit);
+document.addEventListener("visibilitychange",refit);
+if(window.ResizeObserver)new ResizeObserver(()=>{const w=$("grids").clientWidth;if(w!==lastFitW){lastFitW=w;refit()}}).observe($("grids"));
 function paintMine(){
   $("gridMine").classList.toggle("locked",!me);
   $("gridMine").querySelectorAll(".c").forEach(c=>{const k=c.dataset.k,on=mine.has(k);c.classList.toggle("on",on);c.classList.toggle("unsaved",on!==saved.has(k))});
@@ -695,7 +698,7 @@ async function loadPoll(rebuild){
   const ds=poll.dates;
   $("meta").textContent=dayLabel(ds[0])+(ds.length>1?" – "+dayLabel(ds[ds.length-1]):"")+" · "+fmtMin(poll.start_hour*60)+"–"+fmtMin(poll.end_hour*60)+" · times in "+poll.tz+" · 30-min slots";
   $("editBtn").hidden=!store.get("owner:"+poll.id);
-  if(rebuild||prev!==JSON.stringify([poll.dates,poll.start_hour,poll.end_hour])){buildGrid($("gridMine"));buildGrid($("gridGroup"));requestAnimationFrame(fitGrids)}
+  if(rebuild||prev!==JSON.stringify([poll.dates,poll.start_hour,poll.end_hour])){buildGrid($("gridMine"));buildGrid($("gridGroup"));fitGrids();refit()}
   return true;
 }
 
